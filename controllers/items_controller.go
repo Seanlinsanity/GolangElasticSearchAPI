@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -22,20 +24,33 @@ type itemsControllerInterface interface {
 type itemsController struct{}
 
 func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
-	sellerID := r.Header.Get("Seller-Id")
-	i, parseErrr := strconv.ParseInt(sellerID, 10, 64)
+	reqSellerID := r.Header.Get("Seller-Id")
+	sellerID, parseErrr := strconv.ParseInt(reqSellerID, 10, 64)
 	if parseErrr != nil {
 		http_utils.RespondErr(w, errors.NewBadRequestError("invalid seller id"))
 		return
 	}
 
-	item := items.Item{
-		Seller: i,
+	requestBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		respErr := errors.NewBadRequestError("invalid request body")
+		http_utils.RespondErr(w, respErr)
+		return
+	}
+	defer r.Body.Close()
+
+	var itemRequest items.Item
+	if err := json.Unmarshal(requestBody, &itemRequest); err != nil {
+		respErr := errors.NewBadRequestError("invalid json body")
+		http_utils.RespondErr(w, respErr)
+		return
 	}
 
-	result, err := services.ItemsService.Create(item)
-	if err != nil {
-		http_utils.RespondErr(w, err)
+	itemRequest.Seller = sellerID
+
+	result, createErr := services.ItemsService.Create(itemRequest)
+	if createErr != nil {
+		http_utils.RespondErr(w, createErr)
 		return
 	}
 
