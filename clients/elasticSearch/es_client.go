@@ -13,7 +13,7 @@ var (
 
 type esClientInterface interface {
 	setClient(*elastic.Client)
-	Index(interface{}) (*elastic.IndexResponse, error)
+	Index(string, interface{}) (*elastic.IndexResponse, error)
 }
 
 type esClient struct {
@@ -35,11 +35,16 @@ func Init() {
 	Client.setClient(client)
 }
 
-func (c *esClient) setClient(cleint *elastic.Client) {
-	c.client = cleint
+func (c *esClient) setClient(client *elastic.Client) {
+	c.client = client
 }
 
-func (esClient *esClient) Index(interface{}) (*elastic.IndexResponse, error) {
+func (esClient *esClient) Index(index string, doc interface{}) (*elastic.IndexResponse, error) {
 	ctx := context.Background()
-	return esClient.client.Index().Do(ctx)
+	result, err := esClient.client.Index().Index(index).BodyJson(doc).Do(ctx)
+	if err != nil {
+		println("error when trying to index document in es", err)
+		return nil, err
+	}
+	return result, nil
 }

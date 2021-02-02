@@ -19,8 +19,11 @@ type itemsServiceInterface interface {
 type itemsService struct {
 }
 
-func (service *itemsService) Create(items.Item) (*items.Item, errors.ApiError) {
-	return nil, errors.NewApiError(http.StatusNotImplemented, "need implement!")
+func (service *itemsService) Create(item items.Item) (*items.Item, errors.ApiError) {
+	if err := item.Save(); err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (service *itemsService) Get(string) (*items.Item, errors.ApiError) {
