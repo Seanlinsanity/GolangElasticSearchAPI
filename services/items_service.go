@@ -1,8 +1,6 @@
 package services
 
 import (
-	"net/http"
-
 	"github.com/Seanlinsanity/GolangElasticSearchAPI/domain/items"
 	"github.com/Seanlinsanity/golang-microservices-practice/src/api/utils/errors"
 )
@@ -26,6 +24,10 @@ func (service *itemsService) Create(item items.Item) (*items.Item, errors.ApiErr
 	return &item, nil
 }
 
-func (service *itemsService) Get(string) (*items.Item, errors.ApiError) {
-	return nil, errors.NewApiError(http.StatusNotImplemented, "need implement!")
+func (service *itemsService) Get(id string) (*items.Item, errors.ApiError) {
+	item := items.Item{Id: id}
+	if err := item.Get(); err != nil {
+		return nil, err
+	}
+	return &item, nil
 }

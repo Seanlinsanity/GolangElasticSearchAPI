@@ -5,11 +5,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Seanlinsanity/GolangElasticSearchAPI/domain/items"
 	"github.com/Seanlinsanity/GolangElasticSearchAPI/services"
 	"github.com/Seanlinsanity/GolangElasticSearchAPI/utils/http_utils"
 	"github.com/Seanlinsanity/golang-microservices-practice/src/api/utils/errors"
+	"github.com/gorilla/mux"
 )
 
 var (
@@ -58,8 +60,11 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *itemsController) Get(w http.ResponseWriter, r *http.Request) {
-	_, err := services.ItemsService.Get("123")
+	vars := mux.Vars(r)
+	itemsId := strings.TrimSpace((vars["id"]))
+	item, err := services.ItemsService.Get(itemsId)
 	if err != nil {
 		http_utils.RespondErr(w, err)
 	}
+	http_utils.RespondJson(w, http.StatusOK, item)
 }

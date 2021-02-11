@@ -2,6 +2,7 @@ package elasticSearch
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/olivere/elastic"
@@ -14,6 +15,7 @@ var (
 type esClientInterface interface {
 	setClient(*elastic.Client)
 	Index(string, interface{}) (*elastic.IndexResponse, error)
+	Get(string, string) (*elastic.GetResult, error)
 }
 
 type esClient struct {
@@ -39,11 +41,27 @@ func (c *esClient) setClient(client *elastic.Client) {
 	c.client = client
 }
 
-func (esClient *esClient) Index(index string, doc interface{}) (*elastic.IndexResponse, error) {
+func (c *esClient) Index(index string, doc interface{}) (*elastic.IndexResponse, error) {
 	ctx := context.Background()
-	result, err := esClient.client.Index().Index(index).BodyJson(doc).Do(ctx)
+	result, err := c.client.Index().
+		Index(index).
+		BodyJson(doc).
+		Do(ctx)
 	if err != nil {
 		println("error when trying to index document in es", err)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (c *esClient) Get(index string, id string) (*elastic.GetResult, error) {
+	ctx := context.Background()
+	result, err := c.client.Get().
+		Index(index).
+		Id(id).
+		Do(ctx)
+	if err != nil {
+		fmt.Printf("error when trying to get id in es: %s, id: %s", err.Error(), id)
 		return nil, err
 	}
 	return result, nil
