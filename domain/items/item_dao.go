@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Seanlinsanity/GolangElasticSearchAPI/clients/elasticSearch"
+	"github.com/Seanlinsanity/GolangElasticSearchAPI/domain/queries"
 	"github.com/Seanlinsanity/golang-microservices-practice/src/api/utils/errors"
 )
 
@@ -41,4 +42,27 @@ func (i *Item) Get() errors.ApiError {
 	}
 	i.Id = itemId
 	return nil
+}
+
+func (i *Item) Search(query queries.EsQuery) ([]Item, errors.ApiError) {
+	result, err := elasticSearch.Client.Search(indexItems, query.Build())
+	if err != nil {
+		return nil, errors.NewInternalServerError(fmt.Sprintf("failed to search documents err: %s", err.Error()))
+	}
+	items := make([]Item, result.TotalHits())
+	for index, hit := range result.Hits.Hits {
+		bytes, _ := hit.Source.MarshalJSON()
+		var item Item
+		if err := json.Unmarshal(bytes, &item); err != nil {
+			return nil, errors.NewInternalServerError(fmt.Sprintf("failed to parse item err: %s", err.Error()))
+		}
+		item.Id = hit.Id
+		items[index] = item
+	}
+
+	if len(items) == 0 {
+		return nil, errors.NewNotFoundError("not items found for giving criteria")
+	}
+
+	return items, nil
 }

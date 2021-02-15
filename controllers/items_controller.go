@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Seanlinsanity/GolangElasticSearchAPI/domain/items"
+	"github.com/Seanlinsanity/GolangElasticSearchAPI/domain/queries"
 	"github.com/Seanlinsanity/GolangElasticSearchAPI/services"
 	"github.com/Seanlinsanity/GolangElasticSearchAPI/utils/http_utils"
 	"github.com/Seanlinsanity/golang-microservices-practice/src/api/utils/errors"
@@ -21,6 +22,7 @@ var (
 type itemsControllerInterface interface {
 	Create(w http.ResponseWriter, r *http.Request)
 	Get(w http.ResponseWriter, r *http.Request)
+	Search(w http.ResponseWriter, r *http.Request)
 }
 
 type itemsController struct{}
@@ -67,4 +69,28 @@ func (c *itemsController) Get(w http.ResponseWriter, r *http.Request) {
 		http_utils.RespondErr(w, err)
 	}
 	http_utils.RespondJson(w, http.StatusOK, item)
+}
+
+func (c *itemsController) Search(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		apiErr := errors.NewBadRequestError("invalid json body")
+		http_utils.RespondErr(w, apiErr)
+		return
+	}
+	defer r.Body.Close()
+
+	var query queries.EsQuery
+	if err := json.Unmarshal(bytes, &query); err != nil {
+		apiErr := errors.NewBadRequestError("invalid json body")
+		http_utils.RespondErr(w, apiErr)
+		return
+	}
+
+	items, searchErr := services.ItemsService.Search(query)
+	if searchErr != nil {
+		http_utils.RespondErr(w, searchErr)
+		return
+	}
+	http_utils.RespondJson(w, http.StatusOK, items)
 }
